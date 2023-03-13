@@ -43,6 +43,7 @@ class Register extends Component
 
         //hash password
         $hashPass = Hash::make($this->password);
+
         //register user
         $user = User::create([
             'first_name' => $this->first_name,
@@ -51,25 +52,15 @@ class Register extends Component
             'password' => $hashPass
         ]);
 
-        //Link to default image
-        $user->avatar()->create([
-            'title' => 'user avatar/w0lg2wjzygjok6dyhoyh',
-            'slug' => Str::slug('user-avatarw0lg2wjzygjok6dyhoyh'),
-            'url' => 'https://res.cloudinary.com/dlfu3ltay/image/upload/v1673087568/post%20image/w0lg2wjzygjok6dyhoyh.png',
-            'path' => 'https://res.cloudinary.com/dlfu3ltay/image/upload/v1673087568/post%20image/w0lg2wjzygjok6dyhoyh.png',
-            'description' => 'image',
-            'size' => 373406,
-            'mimeType' => 'image',
-            'user_id' => $user->id
-        ]);
-
         if($user){
             //flash success message
-            session()->flash('success','You are Registered Successfully');
+            $this->dispatchBrowserEvent('toast-success', ['message' => 'You are Registered Successfully']);
             //if user successfully created redirect to login page
             return redirect(route("login"));
         }
         // else return error
-        return $this->error = "Something went wrong";
+        $this->error = "Something went wrong";
+        $this->dispatchBrowserEvent('toast-error', ['message' => $this->error]);
+        return;
     }
 }

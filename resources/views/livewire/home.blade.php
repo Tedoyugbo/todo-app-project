@@ -1,124 +1,132 @@
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card">
-                <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-                    <main class="container">
-                        <div class="p-4 p-md-5 mb-4 rounded text-bg-dark">
-                          <div class="col-md-6 px-0">
-                            <h1 class="display-4 fst-italic">{{ $main_post->title }}</h1>
-                            <p class="lead my-3">{!! Str::words($main_post->body, 10, ' ...') !!}</p>
-                            <p class="lead mb-0"><a href="{{ route('posts.show',$main_post->slug)}}" class="text-white fw-bold">Continue reading...</a></p>
-                          </div>
-                        </div>
+<section class="vh-100" style="background-color: #eee;">
+    <div class="container py-5 h-100">
+      <div class="row d-flex justify-content-center align-items-center h-100">
+        <div class="col col-lg-9 col-xl-7">
+          <div class="card rounded-3">
+            <div class="card-body p-4">
 
-                        <div class="row mb-2">
-                            @foreach ($featured_posts as $post)
-                                <div class="col-md-6">
-                                    <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
-                                        <div class="col p-4 d-flex flex-column position-static">
-                                        <strong class="d-inline-block mb-2 text-primary">{{$post->category->name}}</strong>
-                                        <h3 class="mb-0">{{ $post->title }}</h3>
-                                        <div class="mb-1 text-muted">{{ $post->created_at->diffForHumans()}}</div>
-                                        <p class="card-text mb-auto">{!! Str::words($post->body, 10, ' ...') !!}</p>
-                                        <a href="{{ route('posts.show',$post->slug)}}" class="stretched-link">Continue reading</a>
-                                        </div>
-                                        <div class="col-auto d-none d-lg-block">
-                                            <img class="img-responsive" src="{{ $post->media->url ?? "#" }}" alt="" width="200" height="250"/>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <a href="{{route('posts.index')}}" class="btn btn-sm btn-outline-dark fst-italic bold">
-                                More Articles
-                            </a>
-                            <div class="btn-toolbar mb-2 mb-md-0">
-                                <div class="btn-group me-2">
-                                    <input
-                                        type="text"
-                                        class="form-control float-end mx-2"
-                                        value="{{ old('search') }}"
-                                        placeholder="Search"
-                                        wire:model="search"/>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-5">
-                          <div class="col-md-8">
-
-                            @foreach ($posts as $post)
-                                <article class="blog-post">
-                                    <h2 class="blog-post-title mb-1">{{ $post->title }}</h2>
-                                    <p class="blog-post-meta">Posted  {{ $post->created_at->diffForHumans() }} by <a href="#">{{ $post->user->first_name }} {{ $post->user->last_name }}</a></p>
-
-                                    <div class="card mb-3" style="max-width: 540px;">
-                                        <div class="row g-0">
-                                        <div class="col-md-4">
-                                            <img src="{{ $post->media->url ?? "#" }}" class="img-fluid rounded-start" alt="{{ $post->media->title ?? "#"  }}.">
-                                        </div>
-                                        <div class="col-md-8">
-                                            <div class="card-body">
-                                                <h5 class="card-title text-info">{{ $post->category->name }}</h5>
-                                                <p class="card-text">{!! Str::words($post->body, 10, ' ...') !!}</p>
-                                                <p class="card-text"><small class="text-muted">Last updated {{ $post->updated_at->diffForHumans()}}</small></p>
-                                                <p class="card-text">
-                                                    <small class="text-muted">
-                                                        <span data-feather="message-circle" class="align-text-center text-primary text-lg"></span>
-                                                        {{ $post->comments->count()}} Comment(s)
-                                                    </small>
-                                                </p>
-
-                                            </div>
-                                        </div>
-                                        <div class="card-footer bg-dark">
-                                            <a href="{{route('posts.show',$post->slug)}}" class="stretched-link text-white">Continue reading</a>
-                                        </div>
-                                        </div>
-                                    </div>
-                                    <br/>
-                                </article>
-                            @endforeach
-
-                            {{ $posts->links() }}
-                            {{-- <nav class="blog-pagination" aria-label="Pagination">
-                              <a class="btn btn-outline-primary rounded-pill" href="#">Older</a>
-                              <a class="btn btn-outline-secondary rounded-pill disabled">Newer</a>
-                            </nav> --}}
-
-                          </div>
-
-                          <div class="col-md-4">
-                            <div class="position-sticky" style="top: 2rem;">
-                              <div class="p-4 mb-3 bg-light rounded">
-                                <h4 class="fst-italic">About</h4>
-                                <p class="mb-0">Project By Trust Edoyugbo.</p>
-                              </div>
-
-                              <div class="p-4">
-                                <h4 class="fst-italic">Socials</h4>
-                                <ol class="list-unstyled">
-                                  <li><a href="#">GitHub</a></li>
-                                  <li><a href="#">Twitter</a></li>
-                                  <li><a href="#">Facebook</a></li>
-                                </ol>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                      </main>
+              <h4 class="text-center my-3 pb-3">To Do App</h4>
+              <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <ul>
+                    <button wire:click="setStatus(5)" class="btn btn-sm mx-2 btn-outline-secondary fst-italic bold">
+                        All Tasks
+                    </button>
+                    <button wire:click="setStatus(0)" class="btn btn-sm mx-2 btn-outline-danger fst-italic bold">
+                        Pending
+                    </button>
+                    <button wire:click="setStatus(1)" class="btn btn-sm mx-2 btn-outline-info fst-italic bold">
+                        Ongoing
+                    </button>
+                    <button wire:click="setStatus(2)" class="btn btn-sm mx-2 btn-outline-success fst-italic bold">
+                        Completed
+                    </button>
+                    <button wire:click="setStatus(3)" class="btn btn-sm mx-2 btn-outline-dark fst-italic bold">
+                        Trashed
+                    </button>
+                </ul>
+                <div class="btn-toolbar mb-4 mb-md-0">
+                    <div class="btn-group me-2">
+                        <input
+                            type="text"
+                            class="form-control float-end mx-2"
+                            value="{{ old('search') }}"
+                            placeholder="Search"
+                            wire:model="search"/>
+                    </div>
                 </div>
             </div>
+
+              <form wire:submit.prevent="storeTodo" class="row row-cols-lg-auto g-3 justify-content-center align-items-center mb-4 pb-2">
+                @csrf
+                <div class="col-12">
+
+                  <div class="form-outline">
+                    <input
+                        type="text"
+                        class="form-control float-end mx-2 @error('description') is-invalid @enderror"
+                        value="{{ old('description') }}"
+                        placeholder="Enter a task here"
+                        wire:model="description"/>
+                    @error('description')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <button type="submit" class="btn btn-success">Create</button>
+                </div>
+              </form>
+
+              <table class="table mb-4">
+                <thead>
+                  <tr>
+                    <th scope="col">No.</th>
+                    <th scope="col">Todo item</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @forelse ($todos as $key => $todo)
+                    <tr>
+                        <th scope="row">{{$key + 1}}</th>
+                        <td>{{$todo->description}}</td>
+                        <td>
+                            @if ($todo->status == 0)
+                                <span class="badge bg-primary">{{$todo->getStatus()}}</span>
+                            @elseif ($todo->status == 1)
+                                <span class="badge bg-secondary">{{$todo->getStatus()}}</span>
+                            @else
+                                <span class="badge bg-success">{{$todo->getStatus()}}</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if ($todo->status == 0)
+                                <button wire:click="markAsOngoing({{ $todo->id }})"  type="button" class="btn btn-secondary btn-sm ms-1">
+                                    <span class="align-text-center text-white text-lg"><i class="fa fa-arrow-up" aria-hidden="true"></i></span>
+                                </button>
+                            @elseif ($todo->status == 1)
+                                <button wire:click="markAsPending({{ $todo->id }})" type="button" class="btn btn-primary btn-sm text-sm">
+                                    <span class="align-text-center text-white text-lg"><i class="fa fa-arrow-down" aria-hidden="true"></i></span>
+                                </button>
+                                <button wire:click="markAsCompleted({{ $todo->id }})" type="button" class="btn btn-success btn-sm ms-1 text-sm">
+                                    <span class="align-text-center text-white text-lg"><i class="fa fa-arrow-up" aria-hidden="true"></i></span>
+                                </button>
+                            @else
+                                <button wire:click="markAsOngoing({{ $todo->id }})" type="button" class="btn btn-secondary btn-sm text-sm">
+                                    <span class="align-text-center text-white text-lg"><i class="fa fa-arrow-down" aria-hidden="true"></i></span>
+                                </button>
+                            @endif
+                            @if (!$todo->trashed())
+                                <button  wire:click="trashTodo({{ $todo->id }})" type="button" class="btn btn-danger btn-sm text-sm">
+                                    <span><i class="fa fa-trash" aria-hidden="true"></i></span>
+                                    {{-- <span data-feather="trash-2" class="align-text-center text-white text-lg"></span> --}}
+                                </button>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7">
+                            <p class="text-center">
+                                No Todo Found
+                            </p>
+                        </td>
+                    </tr>
+                @endforelse
+
+                  {{ $todos->links() }}
+                </tbody>
+              </table>
+
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-</div>
+  </section>
+
 

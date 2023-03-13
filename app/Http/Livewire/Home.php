@@ -6,6 +6,8 @@ use App\Models\Tag;
 use App\Models\Post;
 use Livewire\Component;
 use App\Models\Category;
+use App\Models\Todo;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -17,48 +19,51 @@ class Home extends Component
 
     protected $paginationTheme = 'bootstrap';
 
-    protected $posts, $tags, $categories;
+    public $description;
 
-    public $title, $body, $category_id, $tag_ids, $image, $post_id;
-    public $error;
+    protected $rules = [
+        'description' => 'required'
+    ];
+
+
+    protected $messages = [
+        'description.required' => 'The Description Field cannot be empty.',
+    ];
+
+    public $todo;
+    public $status = 4;
+    protected LengthAwarePaginator $todos;
+
     //set form validation rules
-
     public $search = '';
 
     public function updatingSearch()
     {
-        $this->resetPage();
-    }
-
-    public function mount()
-    {
-        $this->tags = Tag::all();
-        $this->categories = Category::all();
+        $this->searchTodos();
     }
 
     public function render()
     {
-        $search = $this->search;
+        switch ($this->status) {
+            case Todo::PENDING:
+                $this->getPendingTodos();
+                break;
+            case Todo::ONGOING:
+                $this->getOngoingTodos();
+                break;
+            case Todo::COMPLETED:
+                $this->getCompletedTodos();
+                break;
+            case 3:
+                $this->getTrashedTodos();
+                break;
+            default:
+                $this->getTodos();
+                break;
+        }
         return view('livewire.home',[
-            'tags' => $this->tags,
-            'categories' => $this->categories,
-            'main_post' => Post::inRandomOrder()->first(),
-            'posts' => Post::where('title', 'like', '%'.$search.'%')
-                ->orWhere('body', 'like', '%'.$search.'%')
-                ->whereHas('category', function($q) use($search) {
-                    $q->where('name',$search);
-                })
-                ->whereHas('tags', function($q) use($search) {
-                    $q->where('name',$search);
-                })
-                ->orderBy('id','DESC')->paginate(5),
-            'featured_posts' => Post::inRandomOrder()->take(2)->get(),
+            'todos' => $this->todos
         ]);
-    }
-
-    public function goToPosts()
-    {
-        return redirect(route('posts.index'));
     }
 
     /**
@@ -67,69 +72,128 @@ class Home extends Component
      * @var array
      */
     private function resetInputFields(){
-        $this->title = '';
-        $this->body = '';
-        $this->category_id = '';
-        $this->tags = [];
-        $this->image = '';
+        $this->description = '';
     }
 
-
-    public function store()
+    public function storeTodo()
     {
-        $this->validate([
-            'title' => 'required',
-            'body' => 'required',
-            'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:1024',
-            'category_id' => 'required',
-        ]);
+        $this->validate();
 
-        $image_name  =  $this->image->getClientOriginalName();
-        $this->image->storeAs('public/photos',$image_name);
-
-        $post = new Post();
-        $post->title = $this->title;
-        $post->slug = Str::slug($this->title);
-        $post->body = $this->body;
-        $post->category_id = $this->category_id;
-        $post->user_id = auth()->user()->id;
-        $post->image = $image_name;
-        $post->save();
-
-        if ($this->tag_ids) {
-            $post->tags()->attach($this->tag_ids);
+        if (!$this->description) {
+            $this->dispatchBrowserEvent('toast-error', ['message' => 'Description is empty']);
+            return;
         }
 
-        if($post){
+        $task = $this->createTask();
+
+        if($task){
             //flash success message
-            session()->flash('success','You Successfully Created a Post');
-            //if user successfully created redirect to login page
-            return redirect(route('admin.posts'));
-        }
-
-        $this->resetInputFields();
-        $this->dispatchBrowserEvent('close-modal');
-    }
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    public function edit($id)
-    {
-        $post = Post::findOrFail($id);
-        if ($post) {
-            $this->post_id =  $post->id;
-            $this->title = $post->title;
-            $this->body = $post->body;
-            $this->category_id = $post->category_id;
-            $this->tags = $post->tags;
-            $this->image = $post->media->url;
+            $this->dispatchBrowserEvent('toast-success', ['message' => 'You Successfully Created a Task']);
         }else{
-            redirect()->to('/admin/posts');
+            $this->dispatchBrowserEvent('toast-error', ['message' => 'Something went wrong!!!']);
         }
+        $this->resetInputFields();
+        $this->getTodos();
     }
+
+    public function markAsPending($id)
+    {
+        $this->getTodo($id);
+        if($this->todo){
+            $this->todo->status = Todo::PENDING;
+            if ($this->todo->completed_at) {
+                $this->todo->completed_at = null;
+            }
+            $this->todo->save();
+        }
+        $this->resetInputFields();
+        $this->getTodos();
+    }
+
+    public function markAsOngoing($id)
+    {
+        $this->getTodo($id);
+        if($this->todo){
+            $this->todo->status = Todo::ONGOING;
+            if ($this->todo->completed_at) {
+                $this->todo->completed_at = null;
+            }
+            $this->todo->save();
+        }
+        $this->resetInputFields();
+        $this->getTodos();
+    }
+
+    public function markAsCompleted($id)
+    {
+        $this->getTodo($id);
+        if($this->todo){
+            $this->todo->status = Todo::COMPLETED;
+            $this->todo->completed_at = now();
+            $this->todo->save();
+        }
+        $this->resetInputFields();
+        $this->getTodos();
+    }
+
+    public function trashTodo($id)
+    {
+        $this->getTodo($id);
+        if($this->todo){
+            $this->todo->delete();
+        }
+        $this->resetInputFields();
+        $this->getTodos();
+    }
+
+    private function createTask()
+    {
+        $todo = new Todo();
+        $todo->description = $this->description;
+        $todo->user_id = auth()->user()->id;
+        $todo->save();
+
+        return $todo;
+    }
+
+    private function getTodo($id)
+    {
+
+        $this->todo = Todo::where('user_id','=',auth()->user()->id)->where('id', '=', $id)
+            ->first();
+    }
+
+    public function setStatus($value)
+    {
+        $this->status = $value;
+    }
+
+    private function getTodos()
+    {
+        $this->todos = Todo::where('user_id','=',auth()->user()->id)->paginate(10);
+    }
+
+    private function getPendingTodos()
+    {
+        $this->todos = Todo::where('user_id','=',auth()->user()->id)->where('status', '=', Todo::PENDING)->paginate(10);
+    }
+
+    private function getOngoingTodos()
+    {
+        $this->todos = Todo::where('user_id','=',auth()->user()->id)->where('status', '=', Todo::ONGOING)->paginate(10);
+    }
+
+    private function getCompletedTodos()
+    {
+        $this->todos = Todo::where('user_id','=',auth()->user()->id)->where('completed_at', '!=', null)->paginate(10);
+    }
+
+    private function getTrashedTodos()
+    {
+        $this->todos = Todo::onlyTrashed()->where('user_id','=',auth()->user()->id)->paginate(10);
+    }
+
+
 
     /**
      * The attributes that are mass assignable.
@@ -154,13 +218,7 @@ class Home extends Component
             'body' => 'required|min:3',
         ]);
 
-        $post = Post::find($this->post_id);
-        $post->update([
-            'title' => $this->title,
-            'body' => $this->body
-        ]);
-
-        session()->flash('message', 'Post Updated Successfully.');
+        session()->flash('message', 'Task Updated Successfully.');
         $this->resetInputFields();
         $this->dispatchBrowserEvent('close-modal');
     }
@@ -172,7 +230,6 @@ class Home extends Component
      */
     public function delete()
     {
-        Post::find($this->post_id)->delete();
-        session()->flash('message', 'Post Deleted Successfully.');
+        session()->flash('message', 'Task Deleted Successfully.');
     }
 }

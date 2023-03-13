@@ -45,4 +45,24 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    public function tasks()
+    {
+        return $this->hasMany(Todo::class, 'user_id');
+    }
+
+    public function pendingTasks()
+    {
+        return $this->tasks->where('status','',Todo::PENDING);
+    }
+
+    public function ongoingTasks()
+    {
+        return $this->tasks->where('status','',Todo::ONGOING);
+    }
+
+    public function completedTasks()
+    {
+        return $this->tasks->where('completed_at', '!=', null);
+    }
+
 }

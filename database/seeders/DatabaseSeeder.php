@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         //This calls the seeder classes and runs them
         $this->call([
             UserSeeder::class,
+            TodoSeeder::class
         ]);
     }
 }

@@ -28,15 +28,15 @@ class Login extends Component
     {
         $this->validate();
         if(Auth::attempt(['email' => $this->email, 'password' => $this->password])){
-            session()->flash('success','You are logged in successfully');
-            if (Auth::user()->role_id == User::ADMIN) {
-                return redirect(route('admin.dashboard'));
-            }
+            //flash success message with toaster
+            $this->dispatchBrowserEvent('toast-success', ['message' => 'You are logged in successfully']);
             return redirect(route('home'));
         }else{
             $this->email = '';
             $this->password = '';
-            return $this->error = "Invalid Credentials";
+            $this->error = "Invalid Credentials";
+            //flash error message with toaster
+            $this->dispatchBrowserEvent('toast-error', ['message' => $this->error]);
         }
     }
 }
